@@ -12,6 +12,7 @@ const replications = [];
 const backgroundTaskFile = "./src/backgroundTask.js";
 
 const processes = new Map();
+let mainPipelineFinished = false;
 
 for (let index = 0; index < PROCESS_COUNT; index++) {
   const child = fork(backgroundTaskFile, [database]);
@@ -29,12 +30,15 @@ for (let index = 0; index < PROCESS_COUNT; index++) {
     if (replications.includes(msg)) return;
 
     if (msg === "free") {
-      console.log("free");
+      // console.log("free");
+      if (mainPipelineFinished) {
+        child.kill();
+      }
       child.isFree = true;
       return;
     }
     if (msg === "busy") {
-      console.log("busy");
+      // console.log("busy");
       child.isFree = false;
       return;
     }
@@ -61,7 +65,7 @@ console.log(`starting with ${processes.size} processes`);
 
 const csvStream = createReadStream(database);
 
-function asd(chunk, enc, cb) {
+function asyncLoop(chunk, enc, cb) {
   let chosenProcess = {};
   chosenProcess.isFree = false;
 
@@ -70,7 +74,7 @@ function asd(chunk, enc, cb) {
 
   if (!chosenProcess.isFree) {
     setTimeout(() => {
-      asd(chunk, enc, cb);
+      asyncLoop(chunk, enc, cb);
     }, 0);
     return;
   }
@@ -87,7 +91,7 @@ await pipeline(
   Writable({
     write(chunk, enc, cb) {
       setTimeout(() => {
-        asd(chunk, enc, cb);
+        asyncLoop(chunk, enc, cb);
       }, 0);
 
       // console.log("Execution", execution++);
@@ -104,4 +108,8 @@ await pipeline(
     },
   })
 );
-console.log("Main FINISHED");
+mainPipelineFinished = true;
+processes.forEach((child) => {
+  if (!child.killed) child.kill();
+});
+// console.log("Main FINISHED");

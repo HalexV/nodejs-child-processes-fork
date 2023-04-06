@@ -13,7 +13,7 @@ import { setTimeout, clearTimeout } from "timers";
 
 const database = process.argv[2];
 
-let timeoutID = -1;
+// let timeoutID = -1;
 let count = 0;
 
 function killProcess() {
@@ -25,14 +25,14 @@ async function onMessage(msg) {
   const myTurn = count;
   count++;
 
-  console.log(`${myTurn} Started!`);
+  // console.log(`${myTurn} Started!`);
 
-  if (timeoutID === -1) {
-    timeoutID = setTimeout(killProcess, 10000);
-  } else {
-    clearTimeout(timeoutID);
-    timeoutID = setTimeout(killProcess, 10000);
-  }
+  // if (timeoutID === -1) {
+  //   timeoutID = setTimeout(killProcess, 10000);
+  // } else {
+  //   clearTimeout(timeoutID);
+  //   timeoutID = setTimeout(killProcess, 10000);
+  // }
 
   process.send("busy");
   await pipeline(
@@ -63,10 +63,13 @@ async function onMessage(msg) {
     })
   );
   process.send("free");
-  console.log(`${myTurn} Finished!`);
+  // console.log(`${myTurn} Finished!`);
 }
 
 process.on("message", onMessage);
+process.on("SIGTERM", () => {
+  process.exit(1);
+});
 
 // console.log(`I'm ready!! ${process.pid}`, database);
 
